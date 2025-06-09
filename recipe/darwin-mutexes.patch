@@ -1,0 +1,44 @@
+diff --git a/dist/aclocal/mutex.m4 b/dist/aclocal/mutex.m4
+index 81f1ea8d..036aa73c 100644
+--- a/dist/aclocal/mutex.m4
++++ b/dist/aclocal/mutex.m4
+@@ -441,10 +441,11 @@ fi
+ 
+ # _spin_lock_try/_spin_unlock: Apple/Darwin
+ if test "$db_cv_mutex" = no; then
+-AC_TRY_LINK(,[
+-	int x;
+-	_spin_lock_try(&x);
+-	_spin_unlock(&x);
++AC_TRY_LINK([
++#include <os/lock.h>],[
++	os_unfair_lock x = OS_UNFAIR_LOCK_INIT;
++	bool _ = os_unfair_lock_trylock(&x);
++	os_unfair_lock_unlock(&x);
+ ], [db_cv_mutex=Darwin/_spin_lock_try])
+ fi
+ 
+diff --git a/src/dbinc/mutex_int.h b/src/dbinc/mutex_int.h
+index b9bccdf7..7284f20c 100644
+--- a/src/dbinc/mutex_int.h
++++ b/src/dbinc/mutex_int.h
+@@ -154,14 +154,13 @@ typedef int tsl_t;
+  * Apple/Darwin library functions.
+  *********************************************************************/
+ #ifdef HAVE_MUTEX_DARWIN_SPIN_LOCK_TRY
+-typedef u_int32_t tsl_t;
++#include <os/lock.h>
++typedef os_unfair_lock tsl_t;
+ 
+ #ifdef LOAD_ACTUAL_MUTEX_CODE
+-extern int _spin_lock_try(tsl_t *);
+-extern void _spin_unlock(tsl_t *);
+-#define	MUTEX_SET(tsl)          _spin_lock_try(tsl)
+-#define	MUTEX_UNSET(tsl)        _spin_unlock(tsl)
+-#define	MUTEX_INIT(tsl)         (MUTEX_UNSET(tsl), 0)
++#define	MUTEX_SET(tsl)          os_unfair_lock_trylock(tsl)
++#define	MUTEX_UNSET(tsl)        os_unfair_lock_unlock(tsl)
++#define	MUTEX_INIT(tsl)         ({ *(tsl) = OS_UNFAIR_LOCK_INIT; tsl; })
+ #endif
+ #endif
+ 

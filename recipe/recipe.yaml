@@ -1,15 +1,18 @@
 context:
-  version: 18.1.40
+  version: 5.3.28
 
 package:
   name: libdb
   version: ${{ version }}
 
 source:
-  url: http://download.oracle.com/berkeley-db/db-${{ version }}.tar.gz
-  sha256: 0cecb2ef0c67b166de93732769abdeba0555086d51de1090df325e18ee8da9c8
+  url: https://download.oracle.com/berkeley-db/db-${{ version }}.tar.gz
+  sha256: e0a992d740709892e81f9d93f06daf305cf73fb81b545afe72478043172c3628
   patches:
-    - fix-pthread-detection.patch
+    - clang-5.3.patch
+    - CVE-2017-10140-cwd-db_config.patch
+    - darwin-mutexes.patch
+    - src_dbinc_db.patch
 
 build:
   number: 0
@@ -22,33 +25,6 @@ requirements:
       then:
         - make
         - gnuconfig
-  host:
-    - openssl
-
-# outputs:
-#   - name: libdb
-#     build:
-#       run_exports:
-#         # OK for minor
-#         # https://abi-laboratory.pro/?view=timeline&l=libdb
-#         - {{ pin_subpackage("libdb", max_pin="x.x") }}
-#     test:
-#       commands:
-#         - test -f ${PREFIX}/lib/libdb${SHLIB_EXT}  # [unix]
-#         - if not exist %LIBRARY_BIN%\libdb%SHLIB_EXT%  # [win]
-
-#   # metapackage for old anaconda name (only available on linux/mac)
-#   - name: db
-#     requirements:
-#       build:
-#         # compilers are to ensure that variants are captured
-#         - {{ compiler('c') }}
-#         - {{ compiler('cxx') }}
-#       run:
-#         - {{ pin_subpackage('libdb', exact=True) }}
-#     test:
-#       commands:
-#         - db_archive -m hello
 
 about:
   homepage: http://www.oracle.com/technology/software/products/berkeley-db/index.html
