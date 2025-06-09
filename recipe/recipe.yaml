@@ -1,0 +1,64 @@
+context:
+  version: 18.1.40
+
+package:
+  name: libdb
+  version: ${{ version }}
+
+source:
+  url: http://download.oracle.com/berkeley-db/db-${{ version }}.tar.gz
+  sha256: 0cecb2ef0c67b166de93732769abdeba0555086d51de1090df325e18ee8da9c8
+  patches:
+    - fix-pthread-detection.patch
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - ${{ compiler('c') }}
+    - ${{ compiler('cxx') }}
+    - if: unix
+      then:
+        - make
+        - gnuconfig
+  host:
+    - openssl
+
+# outputs:
+#   - name: libdb
+#     build:
+#       run_exports:
+#         # OK for minor
+#         # https://abi-laboratory.pro/?view=timeline&l=libdb
+#         - {{ pin_subpackage("libdb", max_pin="x.x") }}
+#     test:
+#       commands:
+#         - test -f ${PREFIX}/lib/libdb${SHLIB_EXT}  # [unix]
+#         - if not exist %LIBRARY_BIN%\libdb%SHLIB_EXT%  # [win]
+
+#   # metapackage for old anaconda name (only available on linux/mac)
+#   - name: db
+#     requirements:
+#       build:
+#         # compilers are to ensure that variants are captured
+#         - {{ compiler('c') }}
+#         - {{ compiler('cxx') }}
+#       run:
+#         - {{ pin_subpackage('libdb', exact=True) }}
+#     test:
+#       commands:
+#         - db_archive -m hello
+
+about:
+  homepage: http://www.oracle.com/technology/software/products/berkeley-db/index.html
+  license: AGPL-3.0-only
+  license_file: LICENSE
+  summary: 'The Berkeley DB embedded database system.'
+
+extra:
+  recipe-maintainers:
+    - ocefpaf
+    - scopatz
+    - mingwandroid
+    - msarahan
