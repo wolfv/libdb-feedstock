@@ -1,15 +1,19 @@
-{% set version = "6.2.32" %}
+context:
+  version: "6.2.32"
 
-package:
+recipe:
   name: libdb
-  version: {{ version }}
+  version: ${{ version }}
 
 source:
-  url: http://download.oracle.com/berkeley-db/db-{{ version }}.tar.gz
+  url: http://download.oracle.com/berkeley-db/db-${{ version }}.tar.gz
   sha256: a9c5e2b004a5777aa03510cfe5cd766a4a3b777713406b02809c17c8e0e7a8fb
   patches:
-    # fixes atomic issue on clang, see https://trac.macports.org/ticket/53577#no1
-    - src_dbinc_atomic.h.patch  # [osx]
+    # # fixes atomic issue on clang, see https://trac.macports.org/ticket/53577#no1
+    - if: osx
+      then:
+        - clang-6.0.patch
+        - fix-pthread-detection.patch
 
 build:
   number: 0
@@ -28,43 +32,42 @@ build:
 #           Files (x86)\MSBuild\14.0\bin" directory.
 #           [C:\ci\libdb_1537814475445\work\build_windows\VS10\db.vcxproj]
 
-requirements:
-  build:
-    - make                  # [unix]
-    - gnuconfig  # [unix]
-    - {{ compiler('c') }}
-    - {{ compiler('cxx') }}
-  host:
-
 outputs:
-  - name: libdb
-    build:
+  - package:
+      name: libdb
+    requirements:
+      build:
+        - ${{ compiler('c') }}
+        - ${{ compiler('cxx') }}
+        - if: unix
+          then:
+            - make
+            - gnuconfig
+
       run_exports:
         # OK for minor
         # https://abi-laboratory.pro/?view=timeline&l=libdb
-        - {{ pin_subpackage("libdb", max_pin="x.x") }}
-    test:
-      commands:
-        - test -f ${PREFIX}/lib/libdb${SHLIB_EXT}  # [unix]
-        - if not exist %LIBRARY_BIN%\libdb%SHLIB_EXT%  # [win]
+        - ${{ pin_subpackage("libdb", upper_bound="x.x") }}
+    tests:
+      - package_contents:
+          lib:
+            - db
+
   # metapackage for old anaconda name (only available on linux/mac)
-  - name: db
+  - package:
+      name: db
     requirements:
-      build:
-        # compilers are to ensure that variants are captured
-        - {{ compiler('c') }}
-        - {{ compiler('cxx') }}
       run:
-        - {{ pin_subpackage('libdb', exact=True) }}
-    test:
-      commands:
-        - db_archive -m hello
+        - ${{ pin_subpackage('libdb', exact=True) }}
+    tests:
+      - script:
+          - db_archive -m hello
 
 about:
-  home: http://www.oracle.com/technology/software/products/berkeley-db/index.html
+  homepage: http://www.oracle.com/technology/software/products/berkeley-db/index.html
   license: AGPL-3.0-only
   license_file: LICENSE
-  summary: 'The Berkeley DB embedded database system.'
+  summary: "The Berkeley DB embedded database system."
 
 extra:
   recipe-maintainers:
@@ -72,3 +75,4 @@ extra:
     - scopatz
     - mingwandroid
     - msarahan
+    - wolfv
