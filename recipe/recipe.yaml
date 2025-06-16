@@ -57,6 +57,8 @@ outputs:
   # metapackage for old anaconda name (only available on linux/mac)
   - package:
       name: db
+    build:
+      script: echo "This is a metapackage for libdb"
     requirements:
       run:
         - ${{ pin_subpackage('libdb', exact=True) }}
