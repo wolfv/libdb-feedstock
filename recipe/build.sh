@@ -26,4 +26,11 @@ make install DOCLIST=license
 cd $PREFIX
 find . -type f -name "*.la" -exec rm -rf '{}' \; -print
 
-file $PREFIX/lib/libdb.dylib
+# On macOS ARM64, check that the library is built for ARM
+if [[ $target_platform == "osx-arm64" ]]; then
+  if [[ ! -f $PREFIX/lib/libdb.dylib ]]; then
+    echo "libdb.dylib not found in $PREFIX/lib"
+    exit 1
+  fi
+  lipo -info $PREFIX/lib/libdb.dylib | grep "arm64"
+fi
